@@ -1,10 +1,19 @@
-from enum import Enum
-from parse import MainaMap
-import itertools
+"""
+This module contains classes and functions to calculate pattern statistics
+"""
+# pylint: disable=too-many-return-statements, too-many-branches
+
 import math
+from enum import Enum
+
+from parse import MainaMap
 
 
 class ChordType(Enum):
+    """
+    Types of chords
+    """
+
     SINGLE = 1
     JUMP = 2  # ##xx
     BROKEN_JUMP = 3  # #x#x
@@ -15,41 +24,59 @@ class ChordType(Enum):
 
 
 class PatternType(Enum):
+    """
+    Types of patterns
+    """
+
     SINGLE_STREAM = 0
     JUMP_STREAM = 1
     HAND_STREAM = 2
     JACK = 3
     TRILL = 4  # TODO : single trill
     OVERALL = 5
+    # TODO : patterns for higher key modes than 4k
 
 
 def is_consecutive(l: list[int]) -> bool:
+    """
+    Returns True if the elements inthe list are consecutive, False otherwise.
+    """
     return all(n - i == l[0] for i, n in enumerate(l))
 
 
 def get_chord_type(notes: list[int]) -> ChordType:
+    """
+    Returns the type of chord based on the notes in it.
+    """
+    # TODO : add support for more than quad chords
+
     if len(notes) == 1:
         return ChordType.SINGLE
-    elif len(notes) == 2:
+
+    if len(notes) == 2:
         # Since very dense single streams may contain two notes
         if is_consecutive(notes):
             return ChordType.JUMP
-        else:
-            return ChordType.BROKEN_JUMP
-    elif len(notes) == 3:
+
+        return ChordType.BROKEN_JUMP
+
+    if len(notes) == 3:
         sorted_notes = sorted(notes)
 
         if is_consecutive(sorted_notes):
             return ChordType.HAND
-        else:
-            return ChordType.BROKEN_HAND
-    elif len(notes) == 4:
+
+        return ChordType.BROKEN_HAND
+    if len(notes) == 4:
         return ChordType.QUAD
-    else:
-        return ChordType.MORE_THAN_QUAD
+
+    return ChordType.MORE_THAN_QUAD
 
 
 def is_chord_overrlap(notes1: list[int], notes2: list[int]) -> bool:
+    """
+    Returns True if at least one of note from notes1, notes2 overlaps, False otherwise.
+    """
     for note1 in notes1:
         if note1 in notes2:
             return True
@@ -60,6 +87,12 @@ def is_chord_overrlap(notes1: list[int], notes2: list[int]) -> bool:
 def get_pattern_type(
     notes1: list[int], notes2: list[int], notes3: list[int]
 ) -> PatternType:
+    """
+    Returns a pattern type
+    """
+
+    # TODO : add support for key modes higher than 4k
+
     higher_chord = notes1 if len(notes1) > len(notes2) else notes2
     lower_chord = notes1 if len(notes1) <= len(notes2) else notes2
 
@@ -68,7 +101,8 @@ def get_pattern_type(
             return PatternType.JACK
 
         return PatternType.SINGLE_STREAM
-    elif get_chord_type(higher_chord) == ChordType.JUMP:
+
+    if get_chord_type(higher_chord) == ChordType.JUMP:
         if is_chord_overrlap(higher_chord, lower_chord):
             return PatternType.JACK
 
@@ -76,7 +110,8 @@ def get_pattern_type(
             return PatternType.TRILL
 
         return PatternType.JUMP_STREAM
-    elif get_chord_type(higher_chord) == ChordType.BROKEN_JUMP:
+
+    if get_chord_type(higher_chord) == ChordType.BROKEN_JUMP:
         if is_chord_overrlap(higher_chord, lower_chord):
             return PatternType.JACK
 
@@ -85,14 +120,16 @@ def get_pattern_type(
                 notes3, lower_chord
             ):
                 return PatternType.SINGLE_STREAM
-        elif higher_chord == notes2:
+
+        if higher_chord == notes2:
             if get_chord_type(notes3) == ChordType.SINGLE and not is_chord_overrlap(
                 notes3, higher_chord
             ):
                 return PatternType.SINGLE_STREAM
 
         return PatternType.JUMP_STREAM
-    elif (
+
+    if (
         get_chord_type(higher_chord) == ChordType.HAND
         or get_chord_type(higher_chord) == ChordType.BROKEN_HAND
     ):
@@ -100,7 +137,8 @@ def get_pattern_type(
             return PatternType.JACK
 
         return PatternType.HAND_STREAM
-    elif get_chord_type(higher_chord) == ChordType.QUAD:
+
+    if get_chord_type(higher_chord) == ChordType.QUAD:
         return PatternType.JACK
 
     raise ValueError(
@@ -109,12 +147,18 @@ def get_pattern_type(
     )
 
 
-def get_weight_from_time_diff(time_diff: float) -> float:
-    # print(f"Time diff: {time_diff}")
+def get_point_from_time_diff(time_diff: float) -> float:
+    """
+    A value which will be added to the pattern stat
+    """
     return 100000 / math.pow(time_diff, 2)
 
 
+# TODO : add support for higher key modes than 4k in a separate function
 def calc_4k_pattern_stats(m: MainaMap) -> dict[PatternType, float]:
+    """
+    Calculates pattern stats for a 4k map.
+    """
     pattern_stats = {pattern: 0.0 for pattern in PatternType}
     pattern_weights = {
         PatternType.SINGLE_STREAM: 1.0,
@@ -133,7 +177,7 @@ def calc_4k_pattern_stats(m: MainaMap) -> dict[PatternType, float]:
 
     for time, notes in list(m.data.items())[2:]:
         pattern_type = get_pattern_type(prev_prev_notes, prev_notes, notes)
-        pattern_stats[pattern_type] += get_weight_from_time_diff(abs(time - prev_time))
+        pattern_stats[pattern_type] += get_point_from_time_diff(abs(time - prev_time))
 
         prev_prev_notes = prev_notes
 
@@ -155,5 +199,5 @@ def calc_4k_pattern_stats(m: MainaMap) -> dict[PatternType, float]:
 if __name__ == "__main__":
     import parse
 
-    m = parse.parse_map("./test_files/delay.osu")
-    print(f"pattern stats: {calc_4k_pattern_stats(m)}")
+    ex_m = parse.parse_map("./test_files/delay.osu")
+    print(f"pattern stats: {calc_4k_pattern_stats(ex_m)}")
