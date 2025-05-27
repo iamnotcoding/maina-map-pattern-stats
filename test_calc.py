@@ -51,14 +51,14 @@ def test_calc_4k_raw_stats_sum():
     ]
 
     ss: list[float] = []
-    file_names_4k :list[str] = []
+    file_names_4k: list[str] = []
 
     for file_name in all_file_names:
         m = parse.parse_map(file_name)
 
         if m.key_count != 4:
             continue
-        
+
         file_names_4k.append(file_name)
         ss.append(calc_4k_raw_stats_sum(m))
 
@@ -72,6 +72,7 @@ def test_calc_4k_raw_stats_sum():
                 f"Raw stats sums do not match: {s1} != {s2}"
                 f" for files {file_names_4k[i]} and {file_names_4k[j]}"
             )
+
 
 if __name__ == "__main__":
     test_calc_4k_raw_stats_sum()

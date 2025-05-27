@@ -31,9 +31,10 @@ class PatternType(Enum):
     SINGLE_STREAM = 0
     JUMP_STREAM = 1
     HAND_STREAM = 2
-    JACK = 3
-    TRILL = 4
-    OVERALL = 5
+    SPEED_JACK = 3
+    CHORD_JACK = 4
+    TRILL = 5
+    OVERALL = 6
     # TODO : patterns for higher key modes than 4k
 
 
@@ -97,7 +98,7 @@ def get_pattern_type(
 
     if get_chord_type(higher_chord) == ChordType.SINGLE:
         if is_chord_overrlap(higher_chord, lower_chord):
-            return PatternType.JACK
+            return PatternType.SPEED_JACK
 
         if is_chord_overrlap(notes1, notes3):
             return PatternType.TRILL
@@ -106,7 +107,7 @@ def get_pattern_type(
 
     if get_chord_type(higher_chord) == ChordType.JUMP:
         if is_chord_overrlap(higher_chord, lower_chord):
-            return PatternType.JACK
+            return PatternType.SPEED_JACK
 
         if get_chord_type(lower_chord) == ChordType.JUMP:
             return PatternType.TRILL
@@ -115,7 +116,7 @@ def get_pattern_type(
 
     if get_chord_type(higher_chord) == ChordType.BROKEN_JUMP:
         if is_chord_overrlap(higher_chord, lower_chord):
-            return PatternType.JACK
+            return PatternType.SPEED_JACK
 
         if higher_chord == notes1:
             if get_chord_type(notes3) == ChordType.SINGLE and not is_chord_overrlap(
@@ -136,12 +137,15 @@ def get_pattern_type(
         or get_chord_type(higher_chord) == ChordType.BROKEN_HAND
     ):
         if is_chord_overrlap(higher_chord, lower_chord):
-            return PatternType.JACK
+            if get_chord_type(lower_chord) != ChordType.SINGLE:
+                return PatternType.CHORD_JACK
+            
+            return PatternType.SPEED_JACK
 
         return PatternType.HAND_STREAM
 
     if get_chord_type(higher_chord) == ChordType.QUAD:
-        return PatternType.JACK
+        return PatternType.CHORD_JACK
 
     raise ValueError(
         "Pattern type not supported for more than quad chords.\n"
@@ -162,11 +166,12 @@ def calc_4k_pattern_stats(m: MainaMap) -> dict[PatternType, float]:
     Calculates pattern stats for a 4k map.
     """
     pattern_stats = {pattern: 0.0 for pattern in PatternType}
-    pattern_weights = {
+    pattern_weights : dict[PatternType, float] = {
         PatternType.SINGLE_STREAM: 1.0,
         PatternType.JUMP_STREAM: 1.1,
         PatternType.HAND_STREAM: 2,
-        PatternType.JACK: 1.0,
+        PatternType.SPEED_JACK: 0.8,
+        PatternType.CHORD_JACK : 3,
         PatternType.TRILL: 1.0,
     }
 
