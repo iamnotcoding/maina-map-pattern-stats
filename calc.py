@@ -114,7 +114,6 @@ def get_pattern_type(
         return PatternType.JUMP_STREAM
 
     if get_chord_type(higher_chord) == ChordType.BROKEN_JUMP:
-        print("wut")
         if is_chord_overrlap(higher_chord, lower_chord):
             return PatternType.JACK
 
