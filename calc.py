@@ -39,7 +39,7 @@ class PatternType(Enum):
 
 def is_consecutive(li: list[int]) -> bool:
     """
-    Returns True if the elements inthe list are consecutive, False otherwise.
+    Returns True if the elements in the list are consecutive, False otherwise.
     """
     sotred_li = sorted(li)
     return all(n - i == sotred_li[0] for i, n in enumerate(sotred_li))
