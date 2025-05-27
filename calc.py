@@ -153,6 +153,5 @@ def calc_4k_pattern_stats(m: MainaMap) -> dict[PatternType, float]:
 if __name__ == "__main__":
     import parse
 
-    print(get_chord_type([0, 2, 3]))
-    m = parse.parse_map("example.osu")
+    m = parse.parse_map("./test_files/delay.osu")
     print(f"pattern stats: {calc_4k_pattern_stats(m)}")
