@@ -165,7 +165,7 @@ def calc_4k_pattern_stats(m: MainaMap) -> dict[PatternType, float]:
     pattern_weights = {
         PatternType.SINGLE_STREAM: 1.0,
         PatternType.JUMP_STREAM: 1.1,
-        PatternType.HAND_STREAM: 1.2,
+        PatternType.HAND_STREAM: 2,
         PatternType.JACK: 1.0,
         PatternType.TRILL: 1.0,
     }
@@ -185,6 +185,13 @@ def calc_4k_pattern_stats(m: MainaMap) -> dict[PatternType, float]:
 
         prev_notes = notes
         prev_time = time
+
+    # This is gonnna be inaccurate but it's better than nothing
+    time, notes = list(m.data.items())[-1]
+    prev_time = list(m.data.keys())[-2]
+
+    pattern_type = get_pattern_type(prev_notes, notes, [3])  # Dummy note
+    pattern_stats[pattern_type] += get_point_from_time_diff(abs(time - prev_time))
 
     for pattern in pattern_stats:
         if pattern == PatternType.OVERALL:
