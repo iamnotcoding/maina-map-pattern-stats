@@ -19,7 +19,8 @@ class PatternType(Enum):
     JUMP_STREAM = 1
     HAND_STREAM = 2
     JACK = 3
-    TRILL = 4  # Single note trill is not supported yet
+    TRILL = 4  # TODO : single trill
+    OVERALL = 5
 
 
 def is_consecutive(l: list[int]) -> bool:
@@ -107,6 +108,9 @@ def get_pattern_type(
             "This function is designed for 4k maps only."
         )
 
+def get_weight_from_time_diff(time_diff: float) -> float:
+    #print(f"Time diff: {time_diff}")
+    return 100000 / math.pow(time_diff, 2)
 
 def calc_4k_pattern_stats(m: MainaMap) -> dict[PatternType, float]:
     pattern_stats = {pattern: 0.0 for pattern in PatternType}
@@ -117,16 +121,17 @@ def calc_4k_pattern_stats(m: MainaMap) -> dict[PatternType, float]:
         PatternType.JACK: 1.0,
         PatternType.TRILL: 1.0,
     }
-    multiplier = 100000
 
     prev_notes = list(m.data.values())[0]
     prev_time = list(m.data.keys())[0]
 
     prev_prev_notes = list(m.data.values())[1]
 
+    line_count = len(m.data)
+
     for time, notes in list(m.data.items())[2:]:
         pattern_type = get_pattern_type(prev_prev_notes, prev_notes, notes)
-        pattern_stats[pattern_type] += 1 / ((time - prev_time) ** 2)
+        pattern_stats[pattern_type] += get_weight_from_time_diff(abs(time - prev_time))
 
         prev_prev_notes = prev_notes
 
@@ -134,9 +139,13 @@ def calc_4k_pattern_stats(m: MainaMap) -> dict[PatternType, float]:
         prev_time = time
 
     for pattern in pattern_stats:
+        if pattern == PatternType.OVERALL:
+            continue
+
         pattern_stats[pattern] *= pattern_weights[pattern]
-        pattern_stats[pattern] /= m.note_count
-        pattern_stats[pattern] *= multiplier
+        pattern_stats[pattern] /= line_count
+
+    pattern_stats[PatternType.OVERALL] = sum(pattern_stats.values())
 
     return pattern_stats
 
