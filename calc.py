@@ -41,7 +41,8 @@ def is_consecutive(li: list[int]) -> bool:
     """
     Returns True if the elements inthe list are consecutive, False otherwise.
     """
-    return all(n - i == li[0] for i, n in enumerate(li))
+    sotred_li = sorted(li)
+    return all(n - i == sotred_li[0] for i, n in enumerate(sotred_li))
 
 
 def get_chord_type(notes: list[int]) -> ChordType:
@@ -55,17 +56,13 @@ def get_chord_type(notes: list[int]) -> ChordType:
 
     if len(notes) == 2:
         # Since very dense single streams may contain two notes
-        sorted_notes = sorted(notes)
-
-        if is_consecutive(sorted_notes):
+        if is_consecutive(notes):
             return ChordType.JUMP
 
         return ChordType.BROKEN_JUMP
 
     if len(notes) == 3:
-        sorted_notes = sorted(notes)
-
-        if is_consecutive(sorted_notes):
+        if is_consecutive(notes):
             return ChordType.HAND
 
         return ChordType.BROKEN_HAND
