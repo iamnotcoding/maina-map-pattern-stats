@@ -1,7 +1,8 @@
-import sys
-import calc
-import parse
 import json
+import sys
+
+import parse
+import calc
 
 
 def butify_pattern_stats(
@@ -24,5 +25,5 @@ if __name__ == "__main__":
     map_data = parse.parse_map(osu_file_path)
     pattern_stats = calc.calc_4k_pattern_stats(map_data)
     butified_stats = butify_pattern_stats(pattern_stats)
-    
+
     print(json.dumps(butified_stats, indent=4, ensure_ascii=False))
