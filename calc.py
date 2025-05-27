@@ -37,11 +37,11 @@ class PatternType(Enum):
     # TODO : patterns for higher key modes than 4k
 
 
-def is_consecutive(l: list[int]) -> bool:
+def is_consecutive(li: list[int]) -> bool:
     """
     Returns True if the elements inthe list are consecutive, False otherwise.
     """
-    return all(n - i == l[0] for i, n in enumerate(l))
+    return all(n - i == li[0] for i, n in enumerate(li))
 
 
 def get_chord_type(notes: list[int]) -> ChordType:

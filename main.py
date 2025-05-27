@@ -1,3 +1,8 @@
+"""
+This moudule gets a file name from the command line, 
+and prints the pattern stats of a osu maina map in a JSON format.
+"""
+
 import json
 import sys
 
@@ -8,6 +13,9 @@ import calc
 def butify_pattern_stats(
     pattern_stats: dict[calc.PatternType, float],
 ) -> dict[str, float]:
+    '''
+    Replaces the enum itself with its name
+    '''
     result: dict[str, float] = {}
 
     for pattern, value in pattern_stats.items():

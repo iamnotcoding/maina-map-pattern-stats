@@ -1,8 +1,10 @@
 """
-A Module for testing functions in calc.py
+This module tests functions in calc.py
 """
 
 import os
+
+import parse
 
 from calc import MainaMap, PatternType, get_pattern_type
 
@@ -36,7 +38,6 @@ def test_calc_4k_raw_stats_sum():
     """
     A test to check if the raw stats sums are equal for all 4k maps.
     """
-    import parse
 
     file_names: list[str] = [
         f"./test_files/{file}"
@@ -56,10 +57,12 @@ def test_calc_4k_raw_stats_sum():
 
     tolerance = 0.01  # The accuracy is f'd up I don't know why
 
-    for i in range(len(ss)):
+    for i, s1 in enumerate(ss):
         for j in range(i, len(ss)):
-            assert abs(ss[i] - ss[j]) < tolerance, (
-                f"Raw stats sums do not match: {ss[i]} != {ss[j]}"
+            s2 = ss[j]
+
+            assert abs(s1 - s2) < tolerance, (
+                f"Raw stats sums do not match: {s1} != {s2}"
             )
 
 

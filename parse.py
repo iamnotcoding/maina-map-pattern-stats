@@ -1,5 +1,5 @@
 '''
-A module to parse an .osu file (osu maina) and store its data in a structured format.
+This module parses an .osu file (osu maina) and store its data in a structured format.
 '''
 
 # pylint: disable=too-few-public-methods
