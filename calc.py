@@ -32,7 +32,7 @@ class PatternType(Enum):
     JUMP_STREAM = 1
     HAND_STREAM = 2
     JACK = 3
-    TRILL = 4  # TODO : single trill
+    TRILL = 4
     OVERALL = 5
     # TODO : patterns for higher key modes than 4k
 
@@ -55,7 +55,9 @@ def get_chord_type(notes: list[int]) -> ChordType:
 
     if len(notes) == 2:
         # Since very dense single streams may contain two notes
-        if is_consecutive(notes):
+        sorted_notes = sorted(notes)
+
+        if is_consecutive(sorted_notes):
             return ChordType.JUMP
 
         return ChordType.BROKEN_JUMP
@@ -100,6 +102,9 @@ def get_pattern_type(
         if is_chord_overrlap(higher_chord, lower_chord):
             return PatternType.JACK
 
+        if is_chord_overrlap(notes1, notes3):
+            return PatternType.TRILL
+
         return PatternType.SINGLE_STREAM
 
     if get_chord_type(higher_chord) == ChordType.JUMP:
@@ -112,6 +117,7 @@ def get_pattern_type(
         return PatternType.JUMP_STREAM
 
     if get_chord_type(higher_chord) == ChordType.BROKEN_JUMP:
+        print("wut")
         if is_chord_overrlap(higher_chord, lower_chord):
             return PatternType.JACK
 

@@ -1,13 +1,13 @@
-<h1> How to use </h1>
+# How to use 
 
 ```
 python main.py osu_file_path
 ```
 
-<h1> Requirments </h1>
-<b>python3.7 or up</b>
+# Requirments 
+* python3.7 or up 
 
-<h1> Example </h1>
+# Example
 
 ```
 python main.py .\test_files\delay.osu
