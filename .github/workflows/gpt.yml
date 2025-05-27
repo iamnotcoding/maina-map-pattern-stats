@@ -1,4 +1,0 @@
-name: Code Review GPT
-uses: mattzcarey/shippie@v0.16.0
-
-on : [push]
