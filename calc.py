@@ -4,9 +4,10 @@ This module contains classes and functions to calculate pattern statistics
 # pylint: disable=too-many-return-statements, too-many-branches
 
 import math
+import json
 from enum import Enum
 
-from parse import MainaMap
+from parse import MainaMap, parse_map
 
 
 class ChordType(Enum):
@@ -139,7 +140,7 @@ def get_pattern_type(
         if is_chord_overrlap(higher_chord, lower_chord):
             if get_chord_type(lower_chord) != ChordType.SINGLE:
                 return PatternType.CHORD_JACK
-            
+
             return PatternType.SPEED_JACK
 
         return PatternType.HAND_STREAM
@@ -166,12 +167,12 @@ def calc_4k_pattern_stats(m: MainaMap) -> dict[PatternType, float]:
     Calculates pattern stats for a 4k map.
     """
     pattern_stats = {pattern: 0.0 for pattern in PatternType}
-    pattern_weights : dict[PatternType, float] = {
+    pattern_weights: dict[PatternType, float] = {
         PatternType.SINGLE_STREAM: 1.0,
         PatternType.JUMP_STREAM: 1.1,
         PatternType.HAND_STREAM: 2,
         PatternType.SPEED_JACK: 0.8,
-        PatternType.CHORD_JACK : 3,
+        PatternType.CHORD_JACK: 3,
         PatternType.TRILL: 1.0,
     }
 
@@ -224,8 +225,15 @@ def butify_pattern_stats(
     return result
 
 
-if __name__ == "__main__":
-    import parse
+def from_file(file_path: str) -> dict[str, float]:
+    """
+    Reads a osu! map file and returns the pattern stats in a butified format.
+    """
+    m = parse_map(file_path)
+    pattern_stats = calc_4k_pattern_stats(m)
+    butified_stats = butify_pattern_stats(pattern_stats)
+    return butified_stats
 
-    ex_m = parse.parse_map("./test_files/delay.osu")
-    print(f"pattern stats: {calc_4k_pattern_stats(ex_m)}")
+
+if __name__ == "__main__":
+    print(json.dumps(from_file("test_files/delay.osu")))

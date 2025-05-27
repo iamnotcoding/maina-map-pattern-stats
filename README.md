@@ -1,7 +1,16 @@
 # How to use 
 
+## From command line
 ```
 python main.py osu_file_path
+```
+
+## From other python files
+```
+from calc import from_file
+
+file_path = input()
+stats_dic = from_file(file_path)
 ```
 
 # Requirments 
