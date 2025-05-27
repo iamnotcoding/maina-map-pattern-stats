@@ -10,27 +10,13 @@ import parse
 import calc
 
 
-def butify_pattern_stats(
-    pattern_stats: dict[calc.PatternType, float],
-) -> dict[str, float]:
-    """
-    Replaces the enum itself with its name
-    """
-    result: dict[str, float] = {}
-
-    for pattern, value in pattern_stats.items():
-        result[pattern.name] = value
-
-    return result
-
-
 def print_pattern_stats(file_path: str) -> None:
     """
     Prints the pattern stats of a osu maina map in a JSON format.
     """
     map_data = parse.parse_map(file_path)
     pattern_stats = calc.calc_4k_pattern_stats(map_data)
-    butified_stats = butify_pattern_stats(pattern_stats)
+    butified_stats = calc.butify_pattern_stats(pattern_stats)
 
     print(json.dumps(butified_stats, indent=4, ensure_ascii=False))
 

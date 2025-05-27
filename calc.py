@@ -196,6 +196,20 @@ def calc_4k_pattern_stats(m: MainaMap) -> dict[PatternType, float]:
     return pattern_stats
 
 
+def butify_pattern_stats(
+    pattern_stats: dict[PatternType, float],
+) -> dict[str, float]:
+    """
+    Replaces the enum itself with its name
+    """
+    result: dict[str, float] = {}
+
+    for pattern, value in pattern_stats.items():
+        result[pattern.name] = value
+
+    return result
+
+
 if __name__ == "__main__":
     import parse
 
