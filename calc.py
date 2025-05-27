@@ -66,51 +66,53 @@ def get_pattern_type(
     if get_chord_type(higher_chord) == ChordType.SINGLE:
         if is_chord_overrlap(higher_chord, lower_chord):
             return PatternType.JACK
-        else:
-            return PatternType.SINGLE_STREAM
+
+        return PatternType.SINGLE_STREAM
     elif get_chord_type(higher_chord) == ChordType.JUMP:
         if is_chord_overrlap(higher_chord, lower_chord):
             return PatternType.JACK
-        else:
-            if get_chord_type(lower_chord) == ChordType.JUMP:
-                return PatternType.TRILL
-            else:
-                return PatternType.JUMP_STREAM
+
+        if get_chord_type(lower_chord) == ChordType.JUMP:
+            return PatternType.TRILL
+
+        return PatternType.JUMP_STREAM
     elif get_chord_type(higher_chord) == ChordType.BROKEN_JUMP:
         if is_chord_overrlap(higher_chord, lower_chord):
             return PatternType.JACK
-        else:
-            if higher_chord == notes1:
-                if get_chord_type(notes3) == ChordType.SINGLE and not is_chord_overrlap(
-                    notes3, lower_chord
-                ):
-                    return PatternType.SINGLE_STREAM
-            elif higher_chord == notes2:
-                if get_chord_type(notes3) == ChordType.SINGLE and not is_chord_overrlap(
-                    notes3, higher_chord
-                ):
-                    return PatternType.SINGLE_STREAM
 
-            return PatternType.JUMP_STREAM
+        if higher_chord == notes1:
+            if get_chord_type(notes3) == ChordType.SINGLE and not is_chord_overrlap(
+                notes3, lower_chord
+            ):
+                return PatternType.SINGLE_STREAM
+        elif higher_chord == notes2:
+            if get_chord_type(notes3) == ChordType.SINGLE and not is_chord_overrlap(
+                notes3, higher_chord
+            ):
+                return PatternType.SINGLE_STREAM
+
+        return PatternType.JUMP_STREAM
     elif (
         get_chord_type(higher_chord) == ChordType.HAND
         or get_chord_type(higher_chord) == ChordType.BROKEN_HAND
     ):
         if is_chord_overrlap(higher_chord, lower_chord):
             return PatternType.JACK
-        else:
-            return PatternType.HAND_STREAM
+
+        return PatternType.HAND_STREAM
     elif get_chord_type(higher_chord) == ChordType.QUAD:
         return PatternType.JACK
-    else:
-        raise ValueError(
-            "Pattern type not supported for more than quad chords.\n"
-            "This function is designed for 4k maps only."
-        )
+
+    raise ValueError(
+        "Pattern type not supported for more than quad chords.\n"
+        "This function is designed for 4k maps only."
+    )
+
 
 def get_weight_from_time_diff(time_diff: float) -> float:
-    #print(f"Time diff: {time_diff}")
+    # print(f"Time diff: {time_diff}")
     return 100000 / math.pow(time_diff, 2)
+
 
 def calc_4k_pattern_stats(m: MainaMap) -> dict[PatternType, float]:
     pattern_stats = {pattern: 0.0 for pattern in PatternType}
