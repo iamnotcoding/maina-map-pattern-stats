@@ -85,12 +85,13 @@ def is_chord_overrlap(notes1: list[int], notes2: list[int]) -> bool:
 
     return False
 
-
+# Parameters' names are stupid, I know
 def get_pattern_type(
     notes1: list[int], notes2: list[int], notes3: list[int]
 ) -> PatternType:
     """
-    Returns a pattern type
+    Parm : a LIST of note objects
+    Returns the pattern type
     """
 
     # TODO : add support for key modes higher than 4k
@@ -194,6 +195,12 @@ def get_hold_note_lowest_time_diff(hold_notes: dict[float, list[int]]) -> float:
 
     return result
 
+def get_closest_release_time(hold_time : float, hold_note_index : int, release_notes : dict[float,list[int]]])->float|None:
+    for release_time, note_objs in release_notes.items():
+        if release_time > hold_time and hold_note_index in note_objs:
+            return release_time
+        
+    return None
 
 # TODO : add support for higher key modes than 4k in a separate function
 def calc_4k_hold_note_pattern_stats(m: MainaMap) -> dict[PatternType, float]:
