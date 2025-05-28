@@ -204,7 +204,8 @@ def calc_4k_hold_note_pattern_stats(m: MainaMap) -> dict[PatternType, float]:
     pattern_weights: dict[PatternType, float] = {
         PatternType.SINGLE_STREAM: 0.91,
         PatternType.JUMP_STREAM: 1.92,
-        PatternType.HAND_STREAM: 4.2,
+        # lower then split trill since it may not be a trill. 
+        PatternType.HAND_STREAM: 4.2, 
         PatternType.SPEED_JACK: 2.2,
         PatternType.LIGHT_CHORD_JACK: 2.8,
         PatternType.DENSE_CHORD_JACK: 5.3,
