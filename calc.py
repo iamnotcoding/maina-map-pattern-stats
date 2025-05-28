@@ -3,7 +3,6 @@ This module contains classes and functions to calculate pattern statistics
 """
 # pylint: disable=too-many-return-statements, too-many-branches
 
-import math
 import json
 from enum import Enum
 
@@ -33,9 +32,11 @@ class PatternType(Enum):
     JUMP_STREAM = 1
     HAND_STREAM = 2
     SPEED_JACK = 3
-    CHORD_JACK = 4
-    TRILL = 5
-    OVERALL = 6
+    LIGHT_CHORD_JACK = 4
+    DENSE_CHORD_JACK = 5
+    JUMP_TRILL = 6  # two hand single trill also falls into this category
+    SPLIT_TRILL = 7  # one hand single trill also falls into this category
+    OVERALL = 8
     # TODO : patterns for higher key modes than 4k
 
 
@@ -101,23 +102,32 @@ def get_pattern_type(
         if is_chord_overrlap(higher_chord, lower_chord):
             return PatternType.SPEED_JACK
 
-        if is_chord_overrlap(notes1, notes3):
-            return PatternType.TRILL
+        if notes1 == notes3:
+            if notes2[0] == 1 or notes2[0] == 2:
+                return PatternType.JUMP_TRILL
+
+            return PatternType.SPLIT_TRILL
 
         return PatternType.SINGLE_STREAM
 
     if get_chord_type(higher_chord) == ChordType.JUMP:
         if is_chord_overrlap(higher_chord, lower_chord):
-            return PatternType.SPEED_JACK
+            if get_chord_type(lower_chord) == ChordType.SINGLE:
+                return PatternType.SPEED_JACK
 
-        if get_chord_type(lower_chord) == ChordType.JUMP:
-            return PatternType.TRILL
+            return PatternType.LIGHT_CHORD_JACK
+
+        if get_chord_type(lower_chord) == ChordType.JUMP and notes1 == notes3:
+            return PatternType.JUMP_TRILL
 
         return PatternType.JUMP_STREAM
 
     if get_chord_type(higher_chord) == ChordType.BROKEN_JUMP:
         if is_chord_overrlap(higher_chord, lower_chord):
-            return PatternType.SPEED_JACK
+            if get_chord_type(lower_chord) == ChordType.SINGLE:
+                return PatternType.SPEED_JACK
+
+            return PatternType.LIGHT_CHORD_JACK
 
         if higher_chord == notes1:
             if get_chord_type(notes3) == ChordType.SINGLE and not is_chord_overrlap(
@@ -131,6 +141,9 @@ def get_pattern_type(
             ):
                 return PatternType.SINGLE_STREAM
 
+        if get_chord_type(lower_chord) == ChordType.JUMP and notes1 == notes3:
+            return PatternType.SPLIT_TRILL
+
         return PatternType.JUMP_STREAM
 
     if (
@@ -139,14 +152,17 @@ def get_pattern_type(
     ):
         if is_chord_overrlap(higher_chord, lower_chord):
             if get_chord_type(lower_chord) != ChordType.SINGLE:
-                return PatternType.CHORD_JACK
+                return PatternType.DENSE_CHORD_JACK
 
             return PatternType.SPEED_JACK
 
         return PatternType.HAND_STREAM
 
     if get_chord_type(higher_chord) == ChordType.QUAD:
-        return PatternType.CHORD_JACK
+        if get_chord_type(lower_chord) == ChordType.JUMP:
+            return PatternType.SPEED_JACK
+
+        return PatternType.DENSE_CHORD_JACK
 
     raise ValueError(
         "Pattern type not supported for more than quad chords.\n"
@@ -154,38 +170,60 @@ def get_pattern_type(
     )
 
 
-def get_point_from_time_diff(time_diff: float) -> float:
+def get_point_from_hold_note_time_diff(time_diff: float) -> float:
     """
     A value which will be added to the pattern stat
     """
-    return 100000 / math.pow(time_diff, 2)
+
+    # THIS IS JUST STUPID
+    return (1000 / time_diff) ** 1.275
+    # return 1000 / time_diff * 10
+    # return 1.1 / (1 + math.exp(-10 * (time_diff / lowest_time_diff - 0.88)))
+
+
+def get_hold_note_lowest_time_diff(hold_notes: dict[float, list[int]]) -> float:
+    """
+    Get the time lowest time difference
+    """
+    times = list(hold_notes.keys())
+
+    result = times[1] - times[0]
+
+    for i in range(2, len(times)):
+        result = min(result, times[i] - times[i - 1])
+
+    return result
 
 
 # TODO : add support for higher key modes than 4k in a separate function
-def calc_4k_pattern_stats(m: MainaMap) -> dict[PatternType, float]:
+def calc_4k_hold_note_pattern_stats(m: MainaMap) -> dict[PatternType, float]:
     """
     Calculates pattern stats for a 4k map.
     """
     pattern_stats = {pattern: 0.0 for pattern in PatternType}
     pattern_weights: dict[PatternType, float] = {
-        PatternType.SINGLE_STREAM: 1.0,
-        PatternType.JUMP_STREAM: 1.1,
-        PatternType.HAND_STREAM: 2,
-        PatternType.SPEED_JACK: 0.8,
-        PatternType.CHORD_JACK: 3,
-        PatternType.TRILL: 1.0,
+        PatternType.SINGLE_STREAM: 0.91,
+        PatternType.JUMP_STREAM: 1.92,
+        PatternType.HAND_STREAM: 4.2,
+        PatternType.SPEED_JACK: 2.2,
+        PatternType.LIGHT_CHORD_JACK: 2.8,
+        PatternType.DENSE_CHORD_JACK: 5.3,
+        PatternType.JUMP_TRILL: 2.7,
+        PatternType.SPLIT_TRILL: 6,
     }
 
-    prev_notes = list(m.data.values())[0]
-    prev_time = list(m.data.keys())[0]
+    prev_notes = list(m.hold_notes.values())[0]
+    prev_time = list(m.hold_notes.keys())[0]
 
-    prev_prev_notes = list(m.data.values())[1]
+    prev_prev_notes = list(m.hold_notes.values())[1]
 
-    line_count = len(m.data)
+    line_count = len(m.hold_notes)
 
-    for time, notes in list(m.data.items())[2:]:
+    for time, notes in list(m.hold_notes.items())[2:]:
         pattern_type = get_pattern_type(prev_prev_notes, prev_notes, notes)
-        pattern_stats[pattern_type] += get_point_from_time_diff(abs(time - prev_time))
+        pattern_stats[pattern_type] += get_point_from_hold_note_time_diff(
+            time - prev_time
+        )
 
         prev_prev_notes = prev_notes
 
@@ -193,11 +231,11 @@ def calc_4k_pattern_stats(m: MainaMap) -> dict[PatternType, float]:
         prev_time = time
 
     # This is gonnna be inaccurate but it's better than nothing
-    time, notes = list(m.data.items())[-1]
-    prev_time = list(m.data.keys())[-2]
+    time, notes = list(m.hold_notes.items())[-1]
+    prev_time = list(m.hold_notes.keys())[-2]
 
     pattern_type = get_pattern_type(prev_notes, notes, [3])  # Dummy note
-    pattern_stats[pattern_type] += get_point_from_time_diff(abs(time - prev_time))
+    pattern_stats[pattern_type] += get_point_from_hold_note_time_diff(time - prev_time)
 
     for pattern in pattern_stats:
         if pattern == PatternType.OVERALL:
@@ -230,10 +268,11 @@ def from_file(file_path: str) -> dict[str, float]:
     Reads a osu! map file and returns the pattern stats in a butified format.
     """
     m = parse_map(file_path)
-    pattern_stats = calc_4k_pattern_stats(m)
+    pattern_stats = calc_4k_hold_note_pattern_stats(m)
     butified_stats = butify_pattern_stats(pattern_stats)
     return butified_stats
 
 
 if __name__ == "__main__":
-    print(json.dumps(from_file("test_files/delay.osu")))
+    print(json.dumps(from_file("test_files/delay.osu"), indent=4))
+    print(get_chord_type([3, 4, 1]))

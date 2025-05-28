@@ -1,22 +1,28 @@
-'''
+"""
 This module parses an .osu file (osu maina) and store its data in a structured format.
-'''
+"""
 
-# pylint: disable=too-few-public-methods
+# pylint: disable=too-few-public-methods, line-too-long
+
 
 class MainaMap:
     """notes should be sotred by time"""
 
-    def __init__(self, key_count: int, data: dict[float, list[int]], note_count: int):
+    def __init__(
+        self,
+        key_count: int,
+        hold_notes: dict[float, list[int]],
+        release_notes: dict[float, list[int]],
+    ) -> None:
         self.key_count = key_count
-        self.data = data
-        self.note_count = note_count
+        self.hold_notes = dict(sorted(hold_notes.items()))
+        self.realse_notes = dict(sorted(release_notes.items()))
 
 
 def get_key_count(path: str) -> int:
-    '''
+    """
     Returns the maina key count from an osu! map file.
-    '''
+    """
     with open(path, "r", encoding="utf-8") as file:
         lines = file.readlines()
 
@@ -33,7 +39,9 @@ def parse_map(path: str) -> MainaMap:
     """
 
     tolerance = 0.1
-    data: dict[float, list[int]] = {}
+    hold_notes: dict[float, list[int]] = {}
+    release_notes: dict[float, list[int]] = {}
+
     key_count = get_key_count(path)
 
     with open(path, "r", encoding="utf-8") as file:
@@ -52,18 +60,24 @@ def parse_map(path: str) -> MainaMap:
             index = int(int(tokens[0]) * key_count / 512 + tolerance)
             time = int(tokens[2])
 
-            if time not in data:
-                data[time] = []
+            if int(tokens[3]) == 1:
+                if time not in hold_notes:
+                    hold_notes[time] = []
 
-            data[time].append(index)
+                hold_notes[time].append(index)
+            else:  # if 128
+                if time not in release_notes:
+                    release_notes[time] = []
 
-        note_count = len(lines[object_start_line:])
+                release_notes[time].append(index)
 
-    return MainaMap(key_count, dict(sorted(data.items())), note_count)
+    return MainaMap(key_count, hold_notes, release_notes)
 
 
 if __name__ == "__main__":
-    ex_m = parse_map("example.osu")
+    ex_m = parse_map(
+        "test_files/LN/Various Artists - 4K LN Dan Courses v2 - Level 1 - (_underjoy) [1st Dan (Marathon)].osu"
+    )
     print(f"Key Count: {ex_m.key_count}")
-    print(f"data: {ex_m.data}")
-    print(f"Note Count: {ex_m.note_count}")
+    print(f"hold_notes: {ex_m.hold_notes}")
+    print(f"release_notes: {ex_m.realse_notes}")
