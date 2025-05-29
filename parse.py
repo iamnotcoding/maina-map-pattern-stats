@@ -111,7 +111,7 @@ def parse_map(path: str) -> MainaMap:
             # if a regular note     
             if int(tokens[3]) == 1:
                 notes.append(Note(index, hold_time))
-            else:
+            elif int(tokens[3]) == 128:
                 release_time = int(tokens[5].split(':')[0])
 
                 notes.append(Note(index, hold_time, release_time))
