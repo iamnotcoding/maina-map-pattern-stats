@@ -4,6 +4,21 @@ This module parses an .osu file (osu maina) and store its data in a structured f
 
 # pylint: disable=too-few-public-methods, line-too-long
 
+class Note:
+    '''
+    Can contain either a regluar or long note
+    '''
+    def __init__(self, index: int, hold_time: int, release_time: int | None = None) ->None:
+        self.index = index
+        self.hold_time = hold_time
+        self.release_time = release_time
+
+    def is_LN(self) -> bool:
+        if self.release_time is None:
+            return False
+
+        return True
+
 
 class MainaMap:
     """notes should be sotred by time"""
@@ -11,12 +26,10 @@ class MainaMap:
     def __init__(
         self,
         key_count: int,
-        hold_notes: dict[float, list[int]],
-        release_notes: dict[float, list[int]],
+        notes: list[Note]
     ) -> None:
         self.key_count = key_count
-        self.hold_notes = dict(sorted(hold_notes.items()))
-        self.realse_notes = dict(sorted(release_notes.items()))
+        self.notes = notes
 
 
 def get_key_count(path: str) -> int:
