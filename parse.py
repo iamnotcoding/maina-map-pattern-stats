@@ -30,7 +30,43 @@ class MainaMap:
     ) -> None:
         self.key_count = key_count
         self.notes = notes
+        self.hold_notes_dict = self.__get_hold_notes_dict()
+        self.release_notes_dict = self.__get_release_notes_dict()
 
+    def __get_hold_notes_dict(self) -> dict[int,list[int]]:
+        '''
+        dict[time, index] (sorted)
+        '''
+        hold_notes_dict : dict[int, list[int]] = {}
+
+        for note in self.notes:
+            try:
+                hold_notes_dict[note.hold_time].append(note.index)
+            except KeyError:
+                hold_notes_dict[note.hold_time] = []
+                hold_notes_dict[note.hold_time].append(note.index)
+
+        return dict(sorted(hold_notes_dict.items()))
+
+    def __get_release_notes_dict(self) -> dict[int,list[int]]:
+        '''
+        dict[time, index] (sorted)
+        '''
+        release_notes_dict : dict[int, list[int]] = {}
+
+        for note in self.notes:
+            if not note.is_LN():
+                continue
+
+            assert note.release_time is not None
+
+            try:
+                release_notes_dict[note.release_time].append(note.index)
+            except KeyError:
+                release_notes_dict[note.release_time] = []
+                release_notes_dict[note.release_time].append(note.index)
+
+        return dict(sorted(release_notes_dict.items()))
 
 def get_key_count(path: str) -> int:
     """
@@ -52,8 +88,7 @@ def parse_map(path: str) -> MainaMap:
     """
 
     tolerance = 0.1
-    hold_notes: dict[float, list[int]] = {}
-    release_notes: dict[float, list[int]] = {}
+    notes : list[Note] = []
 
     key_count = get_key_count(path)
 
@@ -71,20 +106,17 @@ def parse_map(path: str) -> MainaMap:
         for line in lines[object_start_line:]:
             tokens = line.split(",")
             index = int(int(tokens[0]) * key_count / 512 + tolerance)
-            time = int(tokens[2])
+            hold_time = int(tokens[2])
 
+            # if a regular note     
             if int(tokens[3]) == 1:
-                if time not in hold_notes:
-                    hold_notes[time] = []
+                notes.append(Note(index, hold_time))
+            else:
+                release_time = int(tokens[5].split(':')[0])
 
-                hold_notes[time].append(index)
-            else:  # if 128
-                if time not in release_notes:
-                    release_notes[time] = []
+                notes.append(Note(index, hold_time, release_time))
 
-                release_notes[time].append(index)
-
-    return MainaMap(key_count, hold_notes, release_notes)
+    return MainaMap(key_count, notes)
 
 
 if __name__ == "__main__":
@@ -92,5 +124,5 @@ if __name__ == "__main__":
         "test_files/LN/Various Artists - 4K LN Dan Courses v2 - Level 1 - (_underjoy) [1st Dan (Marathon)].osu"
     )
     print(f"Key Count: {ex_m.key_count}")
-    print(f"hold_notes: {ex_m.hold_notes}")
-    print(f"release_notes: {ex_m.realse_notes}")
+    print(f"hold_notes: {ex_m.hold_notes_dict}")
+    print(f"release_notes: {ex_m.release_notes_dict}")
