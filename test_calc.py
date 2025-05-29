@@ -24,12 +24,19 @@ def calc_4k_raw_stats_sum(m: MainaMap) -> float:
     """
     pattern_stats = {pattern: 0.0 for pattern in PatternType}
 
-    prev_notes = list(m.hold_notes.values())[0]
+    hold_notes_dict_cpy = m.hold_notes_dict.copy()
+    hold_notes_dict_cpy.update(m.release_notes_dict)
 
-    prev_prev_notes = list(m.hold_notes.values())[1]
-    line_count = len(m.hold_notes)
+    all_notes : dict[int,list[int]] = hold_notes_dict_cpy
+    all_notes = dict(sorted(all_notes.items()))
 
-    for _, notes in list(m.hold_notes.items())[2:]:
+    print(all_notes)
+    prev_notes = list(all_notes.values())[0]
+
+    prev_prev_notes = list(all_notes.values())[1]
+    line_count = len(all_notes)
+
+    for _, notes in list(all_notes.items())[2:]:
         pattern_type = get_pattern_type(prev_prev_notes, prev_notes, notes)
         pattern_stats[pattern_type] += 1
 
@@ -38,7 +45,7 @@ def calc_4k_raw_stats_sum(m: MainaMap) -> float:
         prev_notes = notes
 
     # This is gonnna be inaccurate but it's better than nothing
-    _, notes = list(m.hold_notes.items())[-1]
+    _, notes = list(all_notes.items())[-1]
     pattern_type = get_pattern_type(prev_notes, notes, [3])  # Dummy note
     pattern_stats[pattern_type] += 1
 
@@ -125,7 +132,7 @@ def test_reform_dan():
             raise ValueError("The map is not 4k what?")
 
         file_names_4k.append(file_name)
-        detailed_ss.append(calc_4k_hold_note_pattern_stats(m))
+        detailed_ss.append(calc_4k_hold_note_pattern_stats(m.hold_notes_dict))
         overall_ss.append(detailed_ss[-1][PatternType.OVERALL])
 
     for i in range(len(all_file_names) - 1):
@@ -163,7 +170,7 @@ def test_joker_dan():
             raise ValueError("The map is not 4k what?")
 
         file_names_4k.append(file_name)
-        detailed_ss.append(calc_4k_hold_note_pattern_stats(m))
+        detailed_ss.append(calc_4k_hold_note_pattern_stats(m.hold_notes_dict))
         overall_ss.append(detailed_ss[-1][PatternType.OVERALL])
 
     for i in range(len(all_file_names) - 1):
@@ -172,7 +179,6 @@ def test_joker_dan():
         {json.dumps(butify_pattern_stats(detailed_ss[i]), indent=4)}\n\
         {json.dumps(butify_pattern_stats(detailed_ss[i + 1]), indent=4)}"
         )
-
 
 def test_malody_regular_dan():
     """
@@ -202,7 +208,7 @@ def test_malody_regular_dan():
             raise ValueError("The map is not 4k what?")
 
         file_names_4k.append(file_name)
-        detailed_ss.append(calc_4k_hold_note_pattern_stats(m))
+        detailed_ss.append(calc_4k_hold_note_pattern_stats(m.hold_notes_dict))
         overall_ss.append(detailed_ss[-1][PatternType.OVERALL])
 
     for i in range(len(all_file_names) - 1):
@@ -245,7 +251,7 @@ def test_malody_extra_dan():
             raise ValueError("The map is not 4k what?")
 
         file_names_4k.append(file_name)
-        detailed_ss.append(calc_4k_hold_note_pattern_stats(m))
+        detailed_ss.append(calc_4k_hold_note_pattern_stats(m.hold_notes_dict))
         overall_ss.append(detailed_ss[-1][PatternType.OVERALL])
 
     for i in range(len(all_file_names) - 1):
@@ -283,7 +289,7 @@ def test_tr1ple_dan():
             raise ValueError("The map is not 4k what?")
 
         file_names_4k.append(file_name)
-        detailed_ss.append(calc_4k_hold_note_pattern_stats(m))
+        detailed_ss.append(calc_4k_hold_note_pattern_stats(m.hold_notes_dict))
         overall_ss.append(detailed_ss[-1][PatternType.OVERALL])
 
     for i in range(len(all_file_names) - 1):
@@ -325,7 +331,7 @@ def test_shoegazor_dan():
             raise ValueError("The map is not 4k what?")
 
         file_names_4k.append(file_name)
-        detailed_ss.append(calc_4k_hold_note_pattern_stats(m))
+        detailed_ss.append(calc_4k_hold_note_pattern_stats(m.hold_notes_dict))
         overall_ss.append(detailed_ss[-1][PatternType.OVERALL])
 
     for i in range(len(all_file_names) - 1):

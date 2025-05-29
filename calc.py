@@ -49,46 +49,47 @@ def is_consecutive(li: list[int]) -> bool:
     return all(n - i == sotred_li[0] for i, n in enumerate(sotred_li))
 
 
-def get_chord_type(notes: list[int]) -> ChordType:
+def get_chord_type(note_indexes: list[int]) -> ChordType:
     """
-    Returns the type of chord based on the notes in it.
+    Returns the type of chord based on the note_indexes in it.
     """
     # TODO : add support for more than quad chords
 
-    if len(notes) == 1:
+    if len(note_indexes) == 1:
         return ChordType.SINGLE
 
-    if len(notes) == 2:
-        # Since very dense single streams may contain two notes
-        if is_consecutive(notes):
+    if len(note_indexes) == 2:
+        # Since very dense single streams may contain two note_indexes
+        if is_consecutive(note_indexes):
             return ChordType.JUMP
 
         return ChordType.BROKEN_JUMP
 
-    if len(notes) == 3:
-        if is_consecutive(notes):
+    if len(note_indexes) == 3:
+        if is_consecutive(note_indexes):
             return ChordType.HAND
 
         return ChordType.BROKEN_HAND
-    if len(notes) == 4:
+    if len(note_indexes) == 4:
         return ChordType.QUAD
 
     return ChordType.MORE_THAN_QUAD
 
 
-def is_chord_overrlap(notes1: list[int], notes2: list[int]) -> bool:
+def is_chord_overrlap(note_indexes1: list[int], note_indexes2: list[int]) -> bool:
     """
-    Returns True if at least one of note from notes1, notes2 overlaps, False otherwise.
+    Returns True if at least one of note from note_indexes1, note_indexes2 overlaps, False otherwise.
     """
-    for note1 in notes1:
-        if note1 in notes2:
+    for note1 in note_indexes1:
+        if note1 in note_indexes2:
             return True
 
     return False
 
+
 # Parameters' names are stupid, I know
 def get_pattern_type(
-    notes1: list[int], notes2: list[int], notes3: list[int]
+    note_indexes1: list[int], note_indexes2: list[int], note_indexes3: list[int]
 ) -> PatternType:
     """
     Parm : a LIST of note objects
@@ -97,15 +98,19 @@ def get_pattern_type(
 
     # TODO : add support for key modes higher than 4k
 
-    higher_chord = notes1 if len(notes1) > len(notes2) else notes2
-    lower_chord = notes1 if len(notes1) <= len(notes2) else notes2
+    higher_chord = (
+        note_indexes1 if len(note_indexes1) > len(note_indexes2) else note_indexes2
+    )
+    lower_chord = (
+        note_indexes1 if len(note_indexes1) <= len(note_indexes2) else note_indexes2
+    )
 
     if get_chord_type(higher_chord) == ChordType.SINGLE:
         if is_chord_overrlap(higher_chord, lower_chord):
             return PatternType.SPEED_JACK
 
-        if notes1 == notes3:
-            if notes2[0] == 1 or notes2[0] == 2:
+        if note_indexes1 == note_indexes3 and get_chord_type(note_indexes3) == ChordType.SINGLE:
+            if note_indexes2[0] == 1 or note_indexes2[0] == 2:
                 return PatternType.JUMP_TRILL
 
             return PatternType.SPLIT_TRILL
@@ -119,7 +124,8 @@ def get_pattern_type(
 
             return PatternType.LIGHT_CHORD_JACK
 
-        if get_chord_type(lower_chord) == ChordType.JUMP and notes1 == notes3:
+        #if get_chord_type(lower_chord) == ChordType.JUMP and note_indexes1 == note_indexes3:
+        if note_indexes1 == note_indexes3:
             return PatternType.JUMP_TRILL
 
         return PatternType.JUMP_STREAM
@@ -131,19 +137,21 @@ def get_pattern_type(
 
             return PatternType.LIGHT_CHORD_JACK
 
-        if higher_chord == notes1:
-            if get_chord_type(notes3) == ChordType.SINGLE and not is_chord_overrlap(
-                notes3, lower_chord
+        if higher_chord == note_indexes1:
+            if get_chord_type(
+                note_indexes3
+            ) == ChordType.SINGLE and not is_chord_overrlap(note_indexes3, lower_chord):
+                return PatternType.SINGLE_STREAM
+
+        if higher_chord == note_indexes2:
+            if get_chord_type(
+                note_indexes3
+            ) == ChordType.SINGLE and not is_chord_overrlap(
+                note_indexes3, higher_chord
             ):
                 return PatternType.SINGLE_STREAM
 
-        if higher_chord == notes2:
-            if get_chord_type(notes3) == ChordType.SINGLE and not is_chord_overrlap(
-                notes3, higher_chord
-            ):
-                return PatternType.SINGLE_STREAM
-
-        if get_chord_type(lower_chord) == ChordType.JUMP and notes1 == notes3:
+        if note_indexes1 == note_indexes3:
             return PatternType.SPLIT_TRILL
 
         return PatternType.JUMP_STREAM
@@ -158,10 +166,17 @@ def get_pattern_type(
 
             return PatternType.SPEED_JACK
 
+        # I know this has to be written the same as hand for consistency,
+        # but this just doesn't work
+        # if note_indexes1 == note_indexes3:
+        # return PatternType.SPLIT_TRILL
+
         return PatternType.HAND_STREAM
 
     if get_chord_type(higher_chord) == ChordType.QUAD:
-        if get_chord_type(lower_chord) == ChordType.JUMP:
+        if get_chord_type(lower_chord) == ChordType.JUMP and (
+            sorted(lower_chord) == [0, 1] or sorted(lower_chord) == [2, 3]
+        ):
             return PatternType.SPEED_JACK
 
         return PatternType.DENSE_CHORD_JACK
@@ -178,7 +193,8 @@ def get_point_from_hold_note_time_diff(time_diff: float) -> float:
     """
 
     # THIS IS JUST STUPID
-    return (1000 / time_diff) ** 1.275
+    return (1000 / time_diff) ** 1.369999
+
     # return 1000 / time_diff * 10
     # return 1.1 / (1 + math.exp(-10 * (time_diff / lowest_time_diff - 0.88)))
 
@@ -196,39 +212,45 @@ def get_hold_note_lowest_time_diff(hold_notes: dict[float, list[int]]) -> float:
 
     return result
 
-def get_closest_release_time(hold_time : float, hold_note_index : int, release_notes : dict[float,list[int]])->float|None:
+
+def get_closest_release_time(
+    hold_time: float, hold_note_index: int, release_notes: dict[float, list[int]]
+) -> float | None:
     for release_time, note_objs in release_notes.items():
         if release_time > hold_time and hold_note_index in note_objs:
             return release_time
-        
+
     return None
 
+
 # TODO : add support for higher key modes than 4k in a separate function
-def calc_4k_hold_note_pattern_stats(hold_notes : dict[float, list[int]]) -> dict[PatternType, float]:
+def calc_4k_hold_note_pattern_stats(
+    hold_notes_dict: dict[int, list[int]],
+) -> dict[PatternType, float]:
     """
     Calculates pattern stats for a 4k map.
     """
     pattern_stats = {pattern: 0.0 for pattern in PatternType}
     pattern_weights: dict[PatternType, float] = {
-        PatternType.SINGLE_STREAM: 0.91,
-        PatternType.JUMP_STREAM: 1.92,
-        # lower then split trill since it may not be a trill. 
-        PatternType.HAND_STREAM: 4.2, 
-        PatternType.SPEED_JACK: 2.2,
-        PatternType.LIGHT_CHORD_JACK: 2.8,
-        PatternType.DENSE_CHORD_JACK: 5.3,
-        PatternType.JUMP_TRILL: 2.7,
-        PatternType.SPLIT_TRILL: 6,
+        PatternType.SINGLE_STREAM: 0.91, #x
+        PatternType.JUMP_STREAM: 1.7, #x
+        # lower then split trill since it may not be a trill.
+        PatternType.HAND_STREAM: 4.3, #x
+        PatternType.SPEED_JACK: 2.5, #x
+        PatternType.LIGHT_CHORD_JACK: 2.9, #x
+        PatternType.DENSE_CHORD_JACK: 5.298, #x
+        PatternType.JUMP_TRILL: 2.81,  # x
+        PatternType.SPLIT_TRILL: 5.692, #x
     }
 
-    prev_notes = list(hold_notes.values())[0]
-    prev_time = list(hold_notes.keys())[0]
+    prev_notes = list(hold_notes_dict.values())[0]
+    prev_time = list(hold_notes_dict.keys())[0]
 
-    prev_prev_notes = list(hold_notes.values())[1]
+    prev_prev_notes = list(hold_notes_dict.values())[1]
 
-    line_count = len(hold_notes)
+    line_count = len(hold_notes_dict)
 
-    for time, notes in list(hold_notes.items())[2:]:
+    for time, notes in list(hold_notes_dict.items())[2:]:
         pattern_type = get_pattern_type(prev_prev_notes, prev_notes, notes)
         pattern_stats[pattern_type] += get_point_from_hold_note_time_diff(
             time - prev_time
@@ -240,8 +262,8 @@ def calc_4k_hold_note_pattern_stats(hold_notes : dict[float, list[int]]) -> dict
         prev_time = time
 
     # This is gonnna be inaccurate but it's better than nothing
-    time, notes = list(hold_notes.items())[-1]
-    prev_time = list(hold_notes.keys())[-2]
+    time, notes = list(hold_notes_dict.items())[-1]
+    prev_time = list(hold_notes_dict.keys())[-2]
 
     pattern_type = get_pattern_type(prev_notes, notes, [3])  # Dummy note
     pattern_stats[pattern_type] += get_point_from_hold_note_time_diff(time - prev_time)
@@ -257,36 +279,17 @@ def calc_4k_hold_note_pattern_stats(hold_notes : dict[float, list[int]]) -> dict
 
     return pattern_stats
 
-def logistic(x : float, midpointOffset : float, multiplier : float, maxValue : float = 1) -> float:
+
+def logistic(
+    x: float, midpointOffset: float, multiplier: float, maxValue: float = 1
+) -> float:
     return maxValue / (1 + math.exp(multiplier * (midpointOffset - x)))
 
-def StrainValueOf(current : int)->float:
-            maniaCurrent = current;
-            startTime :float= maniaCurrent.StartTime;
-            endTime :float= maniaCurrent.EndTime;
-            column :int= maniaCurrent.BaseObject.Column;
-            isOverlapping :bool= False;
 
-            closestEndTime = Math.Abs(endTime - startTime); // Lowest value we can assume with the current information
-            holdFactor = 1.0; # Factor to all additional strains in case something else is held
-            holdAddition = 0.0; # Addition to the current note in case it's a hold and has to be released awkwardly
-
-            for (int i = 0; i < endTimes.Length; ++i)
-            {
-                # The current note is overlapped if a previous note or end is overlapping the current note body
-                isOverlapping |= Precision.DefinitelyBigger(endTimes[i], startTime, 1) &&
-                                 Precision.DefinitelyBigger(endTime, endTimes[i], 1) &&
-                                 Precision.DefinitelyBigger(startTime, startTimes[i], 1);
-
-                // We give a slight bonus to everything if something is held meanwhile
-                if (Precision.DefinitelyBigger(endTimes[i], endTime, 1) &&
-                    Precision.DefinitelyBigger(startTime, startTimes[i], 1))
-                    holdFactor = 1.25;
-
-                closestEndTime = Math.Min(closestEndTime, Math.Abs(endTime - endTimes[i]));
-            }
 # TODO : add support for higher key modes than 4k in a separate function
-def calc_4k_release_note_pattern_stats(hold_notes : dict[float,list[int]], release_notes : dict[float, list[int]]) -> dict[PatternType, float]:
+def calc_4k_release_note_pattern_stats(
+    hold_notes: dict[float, list[int]], release_notes: dict[float, list[int]]
+) -> dict[PatternType, float]:
     """
     Basically uses the same algorithm that osu!lazor does
     """
@@ -294,8 +297,8 @@ def calc_4k_release_note_pattern_stats(hold_notes : dict[float,list[int]], relea
     pattern_weights: dict[PatternType, float] = {
         PatternType.SINGLE_STREAM: 0.91,
         PatternType.JUMP_STREAM: 1.92,
-        # lower then split trill since it may not be a trill. 
-        PatternType.HAND_STREAM: 4.2, 
+        # lower then split trill since it may not be a trill.
+        PatternType.HAND_STREAM: 4.2,
         PatternType.SPEED_JACK: 2.2,
         PatternType.LIGHT_CHORD_JACK: 2.8,
         PatternType.DENSE_CHORD_JACK: 5.3,
@@ -359,7 +362,7 @@ def from_file(file_path: str) -> dict[str, float]:
     Reads a osu! map file and returns the pattern stats in a butified format.
     """
     m = parse_map(file_path)
-    pattern_stats = calc_4k_hold_note_pattern_stats(m.hold_notes)
+    pattern_stats = calc_4k_hold_note_pattern_stats(m.hold_notes_dict)
     butified_stats = butify_pattern_stats(pattern_stats)
     return butified_stats
 
